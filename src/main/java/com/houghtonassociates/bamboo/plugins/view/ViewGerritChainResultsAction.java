@@ -22,6 +22,7 @@ import java.util.NoSuchElementException;
 
 import com.atlassian.bamboo.resultsummary.ResultSummaryPredicates;
 import com.atlassian.bamboo.storage.StorageLocationService;
+import com.atlassian.spring.container.ContainerManager;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.log4j.Logger;
 import org.jetbrains.annotations.NotNull;
@@ -176,7 +177,11 @@ public class ViewGerritChainResultsAction extends ChainResultsAction implements 
 
     public boolean isLogAccessible(BuildResultsSummary jobResults) {
         if (jobResults != null) {
-            File logFile = new File(BuildLogUtils.getLogFileDirectory(jobResults.getPlanKey()), BuildLogUtils.getLogFileName(jobResults.getPlanKey(), jobResults.getBuildNumber()));
+
+            final StorageLocationService storageLocationService = (StorageLocationService) ContainerManager.
+                                                                             getComponent("storageLocationService");
+            File logFile = new File(storageLocationService.getBuildLogsDirectory(jobResults.getPlanKey()),
+                    storageLocationService.getLogFileName(jobResults.getPlanKey(), Long.valueOf(jobResults.getBuildNumber())));
             return logFile.canRead();
         }
         return false;
