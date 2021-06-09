@@ -921,7 +921,7 @@ public class GerritRepositoryAdapter extends AbstractStandaloneRepository
             new BuildRepositoryChangesImpl(change.getLastRevision(), commits);
 
         if (!this.getVcsBranch().isEqualToBranchWith(change.getBranch()))
-            buildChanges.setOverriddenVcsBranch(this.getVcsBranch());
+            buildChanges.setActualBranch(this.getVcsBranch());
 
         bandanaManager.setValue(PlanAwareBandanaContext.GLOBAL_CONTEXT,
             change.getId(), change.getLastRevision());
@@ -1124,7 +1124,7 @@ public class GerritRepositoryAdapter extends AbstractStandaloneRepository
                                        String vcsRevisionKey,
                                        File sourceDirectory, int depth) throws RepositoryException {
         String originalVcsRevisionKey = vcsRevisionKey;
-        PlanKey actualKey = PlanKeys.getPlanKey(buildContext.getPlanKey());
+        PlanKey actualKey = buildContext.getTypedPlanKey();
         final BuildLogger buildLogger = buildLoggerManager.getLogger(actualKey);
         final boolean doShallowFetch =
             USE_SHALLOW_CLONES && gc.isUseShallowClones() && depth == 1;
@@ -1376,8 +1376,7 @@ public class GerritRepositoryAdapter extends AbstractStandaloneRepository
     public void
                     createBranch(long repositoryId, String branchName,
                                  BuildContext buildContext) throws RepositoryException {
-        PlanKey planKey = PlanKeys.getPlanKey(buildContext.getPlanKey());
-
+        PlanKey planKey = buildContext.getTypedPlanKey();
         if (planKey != null) {
             JGitRepository jgitRepo = new JGitRepository();
 

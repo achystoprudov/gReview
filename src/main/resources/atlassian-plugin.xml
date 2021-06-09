@@ -96,7 +96,7 @@
     </web-resource>
 
 	<component-import key="i18nResolver" interface="com.atlassian.sal.api.message.I18nResolver"/>
-	<component-import key="branchIntegrationHelper" interface="com.atlassian.bamboo.plan.branch.BranchIntegrationHelper" />
+	<component-import key="branchIntegrationHelper" interface="com.atlassian.bamboo.plan.branch.VcsBranchIntegrationHelper" />
     <component-import key="encryptionService" interface="com.atlassian.bamboo.security.EncryptionService" />
     <component-import key="repositoryDefinitionManager" interface="com.atlassian.bamboo.repository.RepositoryDefinitionManager" />
     <component-import key="decoratingAggregatedChainErrorAccessor" interface="com.atlassian.bamboo.logger.ErrorAccessor" />

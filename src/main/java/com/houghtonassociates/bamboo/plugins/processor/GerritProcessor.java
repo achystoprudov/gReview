@@ -1,12 +1,12 @@
 /**
  * Copyright 2012 Houghton Associates
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -15,11 +15,9 @@
  */
 package com.houghtonassociates.bamboo.plugins.processor;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
-
+import com.atlassian.bamboo.plan.Plan;
+import com.atlassian.bamboo.repository.RepositoryException;
+import com.atlassian.bamboo.vcs.configuration.PlanRepositoryDefinition;
 import org.apache.log4j.Logger;
 
 import com.atlassian.bamboo.build.CustomBuildProcessor;
@@ -27,9 +25,6 @@ import com.atlassian.bamboo.build.fileserver.BuildDirectoryManager;
 import com.atlassian.bamboo.builder.BuildState;
 import com.atlassian.bamboo.configuration.AdministrationConfiguration;
 import com.atlassian.bamboo.configuration.AdministrationConfigurationAccessor;
-import com.atlassian.bamboo.plan.Plan;
-import com.atlassian.bamboo.repository.RepositoryDefinition;
-import com.atlassian.bamboo.repository.RepositoryException;
 import com.atlassian.bamboo.utils.error.ErrorCollection;
 import com.atlassian.bamboo.utils.i18n.I18nBeanFactory;
 import com.atlassian.bamboo.utils.i18n.TextProviderAdapter;
@@ -42,6 +37,11 @@ import com.houghtonassociates.bamboo.plugins.GerritRepositoryAdapter;
 import com.houghtonassociates.bamboo.plugins.dao.GerritChangeVO;
 import com.houghtonassociates.bamboo.plugins.dao.GerritService;
 import com.opensymphony.xwork2.TextProvider;
+
+import java.util.Arrays;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 
 /**
  * Post processor which updates Gerrit after build completes
@@ -62,10 +62,6 @@ public class GerritProcessor extends BaseConfigurableBuildPlugin implements
     @Override
     public void init(BuildContext buildContext) {
         super.init(buildContext);
-
-        final List<RepositoryDefinition> repositories =
-            buildContext.getRepositoryDefinitions();
-
         this.customConfiguration =
             buildContext.getBuildDefinition().getCustomConfiguration();
     }
@@ -164,42 +160,35 @@ public class GerritProcessor extends BaseConfigurableBuildPlugin implements
     }
 
     @Override
-    public BuildContext call() throws InterruptedException, Exception {
-        final String buildPlanKey = buildContext.getPlanKey();
+    public BuildContext call() throws Exception {
         final CurrentBuildResult results = buildContext.getBuildResult();
         final Boolean runVerification =
             Boolean.parseBoolean(customConfiguration.get(GERRIT_RUN));
-
-        logger.info("Run verification: " + runVerification);
-
+        List<PlanRepositoryDefinition> repos = buildContext.getVcsRepositories();
         if (runVerification) {
-            final List<RepositoryDefinition> repositories =
-                buildContext.getRepositoryDefinitions();
-
-            for (RepositoryDefinition rd : repositories) {
-                if (rd.getRepository() instanceof GerritRepositoryAdapter) {
+            for (PlanRepositoryDefinition rd : repos) {
+                if (rd.asLegacyData().getRepository().getClass().isAssignableFrom(GerritRepositoryAdapter.class)) {
                     logger.info("Updating Change Verification...");
-                    updateChangeVerification(rd, buildPlanKey, results);
+                    updateChangeVerification(rd, results);
                 }
             }
         }
-
         return buildContext;
     }
 
     private void
-                    updateChangeVerification(RepositoryDefinition rd,
-                                             String buildPlanKey,
+                    updateChangeVerification(PlanRepositoryDefinition rd,
                                              CurrentBuildResult results) throws RepositoryException {
+        Long id = rd.asLegacyData().getId();
         final GerritRepositoryAdapter gra =
-            (GerritRepositoryAdapter) rd.getRepository();
+            (GerritRepositoryAdapter) rd.asLegacyData().getRepository();
         String revNumber =
             results.getCustomBuildData().get("repository.revision.number");
         final String vcsRevision =
-            buildContext.getBuildChanges().getVcsRevisionKey(rd.getId());
+            buildContext.getBuildChanges().getVcsRevisionKey(id);
         final String prevVcsRevision =
             buildContext.getBuildChanges()
-                .getPreviousVcsRevisionKey(rd.getId());
+                .getPreviousVcsRevisionKey(id);
 
         final GerritService service = gra.getGerritDAO();
 
